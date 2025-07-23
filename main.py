@@ -6,18 +6,16 @@ import os
 from datetime import datetime
 import time
 
-# --- CONFIGURATION ---
 BOT_TOKEN = '8037950501:AAFZGTIhG6WKafogoblSvMOUYSFn0zACBJU'
 CHAT_ID = '1282149880'
 CONFIDENCE_THRESHOLD = 0.3
-TELEGRAM_INTERVAL = 30  # seconds between alerts
-MODEL_PATH = 'yolov8n.pt'  # Use yolov8n.pt or custom model path
+TELEGRAM_INTERVAL = 30  
+MODEL_PATH = 'yolov8n.pt' 
 
-# --- INITIAL SETUP ---
+
 model = YOLO(MODEL_PATH)
-last_alert_time = 0  # To avoid spamming
+last_alert_time = 0  
 
-# Telegram image sending function
 def send_telegram_image(image_path):
     print("[INFO] Sending image via Telegram...")
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto"
@@ -33,8 +31,7 @@ def send_telegram_image(image_path):
         print("[✅] Telegram alert sent successfully!")
     else:
         print("[❌] Telegram error:", response.text)
-
-# Start video capture
+        
 cap = cv2.VideoCapture(0)
 
 while True:
@@ -43,7 +40,6 @@ while True:
         print("[ERROR] Could not read from camera.")
         break
 
-    # Run YOLOv8 detection
     results = model.predict(source=frame, conf=CONFIDENCE_THRESHOLD, save=False, verbose=False)
 
     detected = False
@@ -58,29 +54,24 @@ while True:
             if class_name == 'cell phone':
                 detected = True
                 print(f"[DETECTED] Cell phone ({conf:.2f})")
-
-                # Draw bounding box
                 xyxy = box.xyxy[0].cpu().numpy().astype(int)
                 x1, y1, x2, y2 = xyxy
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                 cv2.putText(frame, f"{class_name} {conf:.2f}", (x1, y1 - 10),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-
-    # Send Telegram alert + play alarm if detected and interval has passed
+                
     current_time = time.time()
     if detected and (current_time - last_alert_time) > TELEGRAM_INTERVAL:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filepath = f"detected_{timestamp}.jpg"
         cv2.imwrite(filepath, frame)
-
-        # 🔊 Play alarm sound
-        winsound.Beep(1500, 300)  # Frequency in Hz, Duration in ms
+        
+        winsound.Beep(1500, 300)  
 
         send_telegram_image(filepath)
-        os.remove(filepath)  # Clean up
+        os.remove(filepath)  
         last_alert_time = current_time
-
-    # Display CCTV feed
+        
     cv2.imshow("📹 CCTV Mobile Detector", frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
