@@ -1,6 +1,6 @@
 import cv2
 import requests
-import winsound  # <-- For alarm
+import winsound  
 from ultralytics import YOLO
 import os
 from datetime import datetime
